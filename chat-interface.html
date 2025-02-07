@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepSeek Fake</title>
+    <link rel="icon" href="fake.png" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        .chat-container {
+            margin-bottom: 100px;
+        }
+
+        .message {
+            display: flex;
+            margin: 5px 0;
+            align-items: flex-start;
+            position: relative;  /* 添加这行 */
+        }
+
+        .message.question {
+            flex-direction: row-reverse;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 10px;
+            margin: 0 10px;
+            position: relative;
+            cursor: text;
+            white-space: pre-wrap;
+        }
+        .delete-button {
+            display: none;
+            position: absolute;
+            right: -40px;  /* 将按钮放在内容右侧 */
+            top: 0;
+        }
+
+        .message:hover .delete-button {
+            display: block;
+        }
+
+        .delete-button button {
+            padding: 4px 8px;
+            font-size: 12px;
+            background: #ff4d4f;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .delete-button button:hover {
+            background: #ff7875;
+        }
+
+        .message-content:hover .delete-button {
+            display: block;
+        }
+
+        .question .message-content {
+            background: #eff6ff;
+        }
+
+        .answer .message-content {
+            background: white;
+        }
+
+        .icon {
+            width: 40px;
+            height: 40px;
+            background: #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px solid #e1e6f2;
+            box-sizing: border-box;
+            margin-top: 5px;
+            flex-shrink: 0; /* 防止图标被压缩 */
+        }
+
+        .icon img {
+            width: 24px; /* 固定图片大小 */
+            height: 24px;
+            padding: 0; /* 移除内边距 */
+            object-fit: contain; /* 确保图片保持比例 */
+        }
+
+        .message:hover .delete-button {
+            display: block;
+        }
+
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            background: #4e8cff;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #3a7aff;
+        }
+
+        .button-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+        }
+
+        .message-content[contenteditable="true"] {
+            border: 2px solid #4e8cff;
+            outline: none;
+        }
+
+        .message-content:hover {
+            background: #e8e8e8;
+        }
+
+        .question .message-content:hover {
+            background: #e6e9ed;
+        }
+        
+        /* 宽度调节 */
+        .controls {
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            border-top: 1px solid #e6e9ed;
+        }
+
+        .input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center; /* 添加这行来使按钮垂直居中 */
+        }
+
+        .input-container textarea {
+            flex: 1;
+            min-height: 40px;
+        }
+
+        .input-container button {
+            padding: 4px 12px; /* 调低按钮高度 */
+        }
+
+        .chat-container {
+            margin: 40px auto 120px;
+            padding: 20px;
+            border: 1px solid #e6e9ed;
+            border-radius: 8px;
+            transition: max-width 0.3s ease;
+        }
+
+        .width-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 10px;
+        }
+
+        .width-control input {
+            width: 150px;
+        }
+
+        /* 删除之前的 width-control 相关样式 */
+        .width-control {
+            position: static;
+            transform: none;
+            background: transparent;
+            padding: 0;
+            border-radius: 0;
+            box-shadow: none;
+        }
+            /* 添加黑暗模式样式 */
+        .chat-container.dark-mode {
+            background: #1f1f1f;
+            border-color: #333;
+        }
+        
+        .dark-mode .question .message-content {
+            background: rgb(57, 55, 55);
+            color: #fff;
+        }
+        
+        .dark-mode .answer .message-content {
+            background: #1f1f1f;
+            color: #fff;
+        }
+
+        /* 切换按钮样式 */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f0f2f5;
+            color: #333;
+            border-radius: 20px;
+            cursor: pointer;
+            border: 1px solid #e6e9ed;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: #e6e9ed;
+            transform: translateY(-1px);
+        }
+
+        .theme-icon {
+            font-size: 16px;
+        }
+
+        /* 深色模式下的按钮样式 */
+        .dark-mode .theme-toggle {
+            background: #2d2d2d;
+            color: #fff;
+            border-color: #444;
+        }
+
+        .dark-mode .theme-toggle:hover {
+            background: #3d3d3d;
+        }
+        /* 添加反馈按钮样式 */
+        .feedback-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            background: #ff774e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .feedback-button:hover {
+            background: #ff774e;
+        }
+    </style>
+</head>
+<body>
+    <a href="https://github.com/your-repo/issues" target="_blank" class="feedback-button">提交反馈</a>
+    <div class="controls">
+        <div class="input-container">
+            <textarea id="questionInput" placeholder="输入问题" rows="2"></textarea>
+            <textarea id="answerInput" placeholder="输入回答" rows="2"></textarea>
+            <button onclick="addMessage()">添加对话</button>
+        </div>
+        <div class="button-group">
+            <button onclick="downloadImage()">下载图片</button>
+            <button onclick="clearMessages()">清空对话</button>
+            <div class="width-control">
+                <span>对话宽度:</span>
+                <input type="range" id="widthControl" min="400" max="1200" value="800">
+                <span id="widthValue">800px</span>
+            </div>
+            <button class="theme-toggle" onclick="toggleTheme()">
+                <span class="theme-icon">🌓</span>
+                <span class="theme-text">深色模式</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer"></div>
+
+    <script>
+        // 添加宽度控制功能
+        const widthControl = document.getElementById('widthControl');
+        const widthValue = document.getElementById('widthValue');
+        const chatContainer = document.getElementById('chatContainer');
+
+        widthControl.addEventListener('input', function() {
+            const width = this.value;
+            chatContainer.style.maxWidth = `${width}px`;
+            widthValue.textContent = `${width}px`;
+        });
+        function toggleTheme() {
+            const chatContainer = document.getElementById('chatContainer');
+            const themeText = document.querySelector('.theme-text');
+            const themeIcon = document.querySelector('.theme-icon');
+            
+            chatContainer.classList.toggle('dark-mode');
+            
+            if (chatContainer.classList.contains('dark-mode')) {
+                themeText.textContent = '浅色模式';
+                themeIcon.textContent = '🌞';
+            } else {
+                themeText.textContent = '深色模式';
+                themeIcon.textContent = '🌓';
+            }
+        }
+
+        function addMessage() {
+            const question = document.getElementById('questionInput').value.trim();
+            const answer = document.getElementById('answerInput').value.trim();
+            
+            if (!question || !answer) return;
+
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Add question
+            const questionDiv = document.createElement('div');
+            questionDiv.className = 'message question';
+            questionDiv.innerHTML = `
+                <div class="message-content" onclick="makeEditable(this)">${question.replace(/\n/g, '<br>')}</div>
+                <div class="delete-button">
+                    <button onclick="deleteMessage(this)">删除</button>
+                </div>
+            `;
+            
+            // Add answer
+            const answerDiv = document.createElement('div');
+            answerDiv.className = 'message answer';
+            answerDiv.innerHTML = `
+                <div class="icon"><img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMzAgMzAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPjxwYXRoIGlkPSJwYXRoIiBkPSJNMjcuNTAxIDguNDY4NzVDMjcuMjQ5IDguMzQ1NyAyNy4xNDA2IDguNTgwMDggMjYuOTkzMiA4LjY5OTIyQzI2Ljk0MzQgOC43MzgyOCAyNi45MDA0IDguNzg5MDYgMjYuODU4NCA4LjgzMzk4QzI2LjQ5MDIgOS4yMjg1MiAyNi4wNjA1IDkuNDg2MzMgMjUuNSA5LjQ1NTA4QzI0LjY3ODcgOS40MTAxNiAyMy45Nzg1IDkuNjY3OTcgMjMuMzU5NCAxMC4yOTY5QzIzLjIyNzUgOS41MjE0OCAyMi43OSA5LjA1ODU5IDIyLjEyNSA4Ljc2MTcyQzIxLjc3NjQgOC42MDc0MiAyMS40MjM4IDguNDUzMTIgMjEuMTgwNyA4LjExNzE5QzIxLjAwOTggNy44Nzg5MSAyMC45NjM5IDcuNjEzMjggMjAuODc3OSA3LjM1MTU2QzIwLjgyNDIgNy4xOTMzNiAyMC43Njk1IDcuMDMxMjUgMjAuNTg3OSA3LjAwMzkxQzIwLjM5MDYgNi45NzI2NiAyMC4zMTM1IDcuMTM4NjcgMjAuMjM2MyA3LjI3NzM0QzE5LjkyNTggNy44NDM3NSAxOS44MDY2IDguNDY4NzUgMTkuODE3NCA5LjEwMTU2QzE5Ljg0NDcgMTAuNTIzNCAxOS45NDUzIDExLjY1NjIgMjEuNjM2NyAxMi40NjI5QzIxLjc3MjUgMTIuNTU0NyAyMS44MDc2IDEyLjY0ODQgMjEuNzY0NiAxMi43ODMyQzIxLjY4MzYgMTMuMDYwNSAyMS41ODY5IDEzLjMzMDEgMjEuNTAxIDEzLjYwNzRDMjEuNDQ3MyAxMy43ODUyIDIxLjM2NjIgMTMuODI0MiAyMS4xNzY4IDEzLjc0NjFDMjAuNTIyNSAxMy40NzI3IDE5Ljk1NyAxMy4wNjg0IDE5LjQ1OCAxMi41NzgxQzE4LjYxMDQgMTEuNzU3OCAxNy44NDM4IDEwLjg1MTYgMTYuODg3NyAxMC4xNDI2QzE2LjY2MzEgOS45NzY1NiAxNi40Mzk1IDkuODIyMjcgMTYuMjA3IDkuNjc1NzhDMTUuMjMxNCA4LjcyNjU2IDE2LjMzNSA3Ljk0NzI3IDE2LjU4OTggNy44NTU0N0MxNi44NTc0IDcuNzU5NzcgMTYuNjgyNiA3LjQyNzczIDE1LjgxOTMgNy40MzE2NEMxNC45NTcgNy40MzU1NSAxNC4xNjcgNy43MjQ2MSAxMy4xNjExIDguMTA5MzhDMTMuMDEzNyA4LjE2Nzk3IDEyLjg1OTQgOC4yMTA5NCAxMi43MDAyIDguMjQ0MTRDMTEuNzg3MSA4LjA3MjI3IDEwLjgzODkgOC4wMzMyIDkuODQ3NjYgOC4xNDQ1M0M3Ljk4MjQyIDguMzUzNTIgNi40OTIxOSA5LjIzNjMzIDUuMzk2NDggMTAuNzQ0MUM0LjA4MTA1IDEyLjU1NDcgMy43NzE0OCAxNC42MTMzIDQuMTUwMzkgMTYuNzYxN0M0LjU0ODgzIDE5LjAyMzQgNS43MDIxNSAyMC44OTg0IDcuNDc1NTkgMjIuMzYzM0M5LjMxMzQ4IDIzLjg4MDkgMTEuNDMwNyAyNC42MjUgMTMuODQ1NyAyNC40ODI0QzE1LjMxMjUgMjQuMzk4NCAxNi45NDYzIDI0LjIwMTIgMTguNzg4MSAyMi42NDA2QzE5LjI1MjkgMjIuODcxMSAxOS43NDAyIDIyLjk2MjkgMjAuNTQ5OCAyMy4wMzMyQzIxLjE3MjkgMjMuMDkxOCAyMS43NzI1IDIzLjAwMiAyMi4yMzczIDIyLjkwNjJDMjIuOTY0OCAyMi43NTIgMjIuOTE0MSAyMi4wNzgxIDIyLjY1MTQgMjEuOTUzMUMyMC41MTg2IDIwLjk1OSAyMC45ODYzIDIxLjM2MzMgMjAuNTYwNSAyMS4wMzcxQzIxLjY0NDUgMTkuNzUyIDIzLjI3ODMgMTguNDE4IDIzLjkxNyAxNC4wOTc3QzIzLjk2NjggMTMuNzUzOSAyMy45MjM4IDEzLjUzOTEgMjMuOTE3IDEzLjI1OThDMjMuOTEzMSAxMy4wOTE4IDIzLjk1MTIgMTMuMDI1NCAyNC4xNDQ1IDEzLjAwNTlDMjQuNjc4NyAxMi45NDUzIDI1LjE5NzMgMTIuNzk4OCAyNS42NzM4IDEyLjUzNTJDMjcuMDU1NyAxMS43NzkzIDI3LjYxMjMgMTAuNTM5MSAyNy43NDQxIDkuMDUwNzhDMjcuNzYzNyA4LjgyNDIyIDI3Ljc0MDIgOC41ODc4OSAyNy41MDEgOC40Njg3NVpNMTUuNDYgMjEuODYxM0MxMy4zOTI2IDIwLjIzNDQgMTIuMzkwNiAxOS42OTkyIDExLjk3NjYgMTkuNzIyN0MxMS41ODk4IDE5Ljc0NDEgMTEuNjU5MiAyMC4xODc1IDExLjc0NDEgMjAuNDc2NkMxMS44MzMgMjAuNzYxNyAxMS45NDkyIDIwLjk1OSAxMi4xMTIzIDIxLjIwOUMxMi4yMjQ2IDIxLjM3NSAxMi4zMDE4IDIxLjYyMyAxMiAyMS44MDY2QzExLjMzNCAyMi4yMjA3IDEwLjE3NjggMjEuNjY4IDEwLjEyMjEgMjEuNjQwNkM4Ljc3NTM5IDIwLjg0NzcgNy42NDk0MSAxOS43OTg4IDYuODU1NDcgMTguMzY1MkM2LjA4OTg0IDE2Ljk4NDQgNS42NDQ1MyAxNS41MDM5IDUuNTcxMjkgMTMuOTIzOEM1LjU1MTc2IDEzLjU0MSA1LjY2NDA2IDEzLjQwNjIgNi4wNDI5NyAxMy4zMzc5QzYuNTQxOTkgMTMuMjQ2MSA3LjA1NzYyIDEzLjIyNjYgNy41NTY2NCAxMy4yOTg4QzkuNjY2MDIgMTMuNjA3NCAxMS40NjE5IDE0LjU1MjcgMTIuOTY2OCAxNi4wNDY5QzEzLjgyNjIgMTYuOTAwNCAxNC40NzY2IDE3LjkxOCAxNS4xNDY1IDE4LjkxMjFDMTUuODU4NCAxOS45Njg4IDE2LjYyNSAyMC45NzQ2IDE3LjYwMDYgMjEuNzk4OEMxNy45NDQzIDIyLjA4NzkgMTguMjE5NyAyMi4zMDg2IDE4LjQ4MjQgMjIuNDcwN0MxNy42ODk1IDIyLjU1ODYgMTYuMzY1MiAyMi41NzgxIDE1LjQ2IDIxLjg2MTNaTTE2LjQ1MDIgMTUuNDgwNUMxNi40NTAyIDE1LjMxMDUgMTYuNTg1OSAxNS4xNzU4IDE2Ljc1NjggMTUuMTc1OEMxNi43OTQ5IDE1LjE3NTggMTYuODMwMSAxNS4xODM2IDE2Ljg2MTMgMTUuMTk1M0MxNi45MDMzIDE1LjIxMDkgMTYuOTQyNCAxNS4yMzQ0IDE2Ljk3MjcgMTUuMjY5NUMxNy4wMjczIDE1LjMyMjMgMTcuMDU4NiAxNS40MDA0IDE3LjA1ODYgMTUuNDgwNUMxNy4wNTg2IDE1LjY1MDQgMTYuOTIyOSAxNS43ODUyIDE2Ljc1MjkgMTUuNzg1MkMxNi41ODIgMTUuNzg1MiAxNi40NTAyIDE1LjY1MDQgMTYuNDUwMiAxNS40ODA1Wk0xOS41MjczIDE3LjA2MjVDMTkuMzMwMSAxNy4xNDI2IDE5LjEzMjggMTcuMjEyOSAxOC45NDM0IDE3LjIyMDdDMTguNjQ5NCAxNy4yMzQ0IDE4LjMyODEgMTcuMTE1MiAxOC4xNTMzIDE2Ljk2ODhDMTcuODgyOCAxNi43NDIyIDE3LjY4OTUgMTYuNjE1MiAxNy42MDc0IDE2LjIxNjhDMTcuNTczMiAxNi4wNDY5IDE3LjU5MjggMTUuNzg1MiAxNy42MjMgMTUuNjM0OEMxNy42OTM0IDE1LjMxMDUgMTcuNjE1MiAxNS4xMDM1IDE3LjM4NzcgMTQuOTE0MUMxNy4yMDEyIDE0Ljc1OTggMTYuOTY1OCAxNC43MTg4IDE2LjcwNjEgMTQuNzE4OEMxNi42MDk0IDE0LjcxODggMTYuNTIwNSAxNC42NzU4IDE2LjQ1NDEgMTQuNjQwNkMxNi4zNDU3IDE0LjU4NTkgMTYuMjU2OCAxNC40NTEyIDE2LjM0MTggMTQuMjg1MkMxNi4zNjkxIDE0LjIzMjQgMTYuNTAxIDE0LjEwMTYgMTYuNTMyMiAxNC4wNzgxQzE2Ljg4MzggMTMuODc3IDE3LjI5IDE0LjA5MzQgMTcuNjY2IDE0LjA5MzhDMTguMDE0NiAxNC4yMzYzIDE4LjI3NzMgMTQuNDk4IDE4LjY1NjIgMTQuODY3MkMxOS4wNDM5IDE1LjMxNDUgMTkuMTEzMyAxNS40Mzk1IDE5LjMzNCAxNS43NzM0QzE5LjUwNzggMTYuMDM3MSAxOS42NjcgMTYuMzA2NiAxOS43NzU0IDE2LjYxNTJDMTkuODQwOCAxNi44MDY2IDE5Ljc1NTkgMTYuOTY0OCAxOS41MjczIDE3LjA2MjVaIiBmaWxsLXJ1bGU9Im5vbnplcm8iIGZpbGw9IiM0RDZCRkUiPjwvcGF0aD48L3N2Zz4=" alt="SVG Image"></div>
+                <div class="message-content" onclick="makeEditable(this)">${answer.replace(/\n/g, '<br>')}</div>
+                <div class="delete-button">
+                    <button onclick="deleteMessage(this)">删除</button>
+                </div>
+            `;
+            // <div class="icon"><img src="avatar.png" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"></div>
+            // <img src="image.svg" alt="SVG Image">
+            chatContainer.appendChild(questionDiv);
+            chatContainer.appendChild(answerDiv);
+            
+            // Clear inputs
+            document.getElementById('questionInput').value = '';
+            document.getElementById('answerInput').value = '';
+        }
+
+        function makeEditable(element) {
+            if (element.getAttribute('contenteditable') === 'true') {
+                return;
+            }
+            
+            element.contentEditable = true;
+            element.focus();
+            
+            // Save selection range
+            const range = document.createRange();
+            range.selectNodeContents(element);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            function saveEdit(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    element.contentEditable = false;
+                    element.removeEventListener('keydown', saveEdit);
+                }
+            }
+            
+            element.addEventListener('keydown', saveEdit);
+            
+            // Handle clicking outside
+            function handleClickOutside(e) {
+                if (!element.contains(e.target)) {
+                    element.contentEditable = false;
+                    document.removeEventListener('click', handleClickOutside);
+                    element.removeEventListener('keydown', saveEdit);
+                }
+            }
+            
+            // Wait for next tick to add click listener to avoid immediate trigger
+            setTimeout(() => {
+                document.addEventListener('click', handleClickOutside);
+            }, 0);
+        }
+
+        function deleteMessage(button) {
+            const message = button.parentElement.parentElement;
+            message.remove();
+        }
+
+        function clearMessages() {
+            if (confirm('确定要清空所有对话吗？')) {
+                document.getElementById('chatContainer').innerHTML = '';
+            }
+        }
+
+        async function downloadImage() {
+            try {
+                const container = document.getElementById('chatContainer');
+                const canvas = await html2canvas(container, {
+                    useCORS: true,            // 启用跨域
+                    allowTaint: true,         // 允许图片污染画布
+                    backgroundColor: '#fff'    // 设置背景色
+                });
+                
+                // 创建一个新的画布并将内容绘制到其中
+                const finalCanvas = document.createElement('canvas');
+                finalCanvas.width = canvas.width;
+                finalCanvas.height = canvas.height;
+                const ctx = finalCanvas.getContext('2d');
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(canvas, 0, 0);
+                
+                const link = document.createElement('a');
+                link.download = 'chat-messages.png';
+                link.href = finalCanvas.toDataURL('image/png');
+                link.click();
+            } catch (error) {
+                console.error('下载图片时出错:', error);
+                alert('下载图片失败，请确保所有图片资源都可以正常访问。');
+            }
+        }
+    </script>
+</body>
+</html>
